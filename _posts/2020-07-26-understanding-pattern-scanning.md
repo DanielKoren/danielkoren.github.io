@@ -35,7 +35,7 @@ assume we have the following assembly block (small snippet taken from notepad.ex
 
 *on the left we have the memory addresses of each line, in the middle is the machine code/opcodes represented in hex which is translated to human-readable code called assembly. (on the right)*
 
-Let's create the pattern ourselves by copying the bytes from where we want our search result to start (If you're lazy you can use [this](https://github.com/cursey/ida-pattern-maker) plugin for IDA) \
+Let's create the pattern ourselves by copying the bytes from where we want our search result to start (If you're lazy you can use [this](https://github.com/cursey/ida-pattern-maker) plugin for IDA) <br>
 We get ```48 89 3D 69 1A 02 00 48 89 45 17``` as our pattern, using IDA we can verify if its valid and not returning multiple results (ALT+B or Search->sequence of bytes), if it does it means our pattern is not unique and we can add some more bytes. <br>
 Alright, so once our pattern is located it will return the address of where it resides in memory which is what we asked for but not what we initially wanted which is the offset 021A69 (represented in reverse 69 1A 02 00 because of endianness) 
 we basically need to add an offset on top of our returned address in this case its +3 bytes. <br>
