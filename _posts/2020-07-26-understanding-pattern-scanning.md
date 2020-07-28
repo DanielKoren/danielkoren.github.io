@@ -9,8 +9,8 @@ image: ""
 
 
 ##### 0x0 explaination
-When referring to pattern what it really means is sequence of bytes, binaries are basically a collection of bytes (so called opcodes or cpu instructions) which performs various tasks.
-In some cases when reversing a binary an update might occur which will force us to repeat the process of reversing in order to find some location in memory, we can avoid that by searching for certain sequence of bytes in memory.
+When referring to pattern what it really means is sequence of bytes, binaries are basically a collection of bytes (so called opcodes or cpu instructions) which performs various tasks. <br>
+In some cases when reversing a binary an update might occur which will force us to repeat the process of reversing in order to find some location in memory, we can avoid that by searching for certain sequence of bytes in memory. 
 This can be useful when reversing games or malware which gets updated often and can save our precious time :)
 
 Our main goal by using this technique is to obtain offsets dynamically without having the need to update our pattern each update, to achieve that we need to take into consideration that we don't want to include too many bytes into our pattern (unless necessary) and choosing area where bytes are less prone to change (of course we can't always predict what will change) 
