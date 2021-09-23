@@ -62,7 +62,7 @@ __declspec(dllexport) void dllEntry(intptr_t(QDECL * syscallptr)(intptr_t arg, .
 
 ```
 
-[here](https://github.com/etlegacy/etlegacy/blob/eef5383289017059042f93e40cd7466b5774a47e/src/cgame/cg_public.h#L333) we can see list of commands(syscalls) that the main executable can invoke, for example if ET wants to shutdown it will call vmMain with CG_SHUTDOWN command to clean/flush any open files or CG_DRAW_ACTIVE_FRAME to draw stuff on the screen.
+[here](https://github.com/etlegacy/etlegacy/blob/eef5383289017059042f93e40cd7466b5774a47e/src/cgame/cg_public.h#L333) we can see list of commands(syscalls) that the main executable can invoke, for example if ET.exe wants to shutdown it will call vmMain with CG_SHUTDOWN command to clean/flush any open files or CG_DRAW_ACTIVE_FRAME to draw stuff on the screen.
 CG_INIT invoked when connecting, reconnecting, loading new map etc which will call CG_Init()
 
 ```c
@@ -218,17 +218,31 @@ one solution for this is to hook ```vmMain``` and draw stuff when ```CG_DRAW_ACT
 library (its simple and minimalstic open-sourced library for hooking on windows x86 & x64)
 
 ```c
-for (int i = 0; i < 64; i++)
+intptr_t __cdecl vmMain_hooked(intptr_t command, intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, intptr_t arg7, intptr_t arg8, intptr_t arg9, intptr_t arg10, intptr_t arg11)
 {
-	auto entity = (centity_t*)(cg_entities + (0xB54 * i));
-	if (!entity)
-		continue;
+	intptr_t result = 0;
 
-	float x, y;
-	if (CG_WorldCoordToScreenCoordFloat(entity->currentState.pos.trBase, &x, &y))
+	static float color_white[4] = { 1, 1, 1, 0.35 };
+
+	switch (command)
 	{	
-		CG_FillRect(x, y, 5, 5, color_white);
-	}
+	case CG_DRAW_ACTIVE_FRAME:
+		for (int i = 0; i < 64; i++)
+		{
+			auto entity = (centity_t*)(cg_entities + (0xB54 * i));
+			if (!entity)
+				continue;
+		
+			float x, y;
+			if (CG_WorldCoordToScreenCoordFloat(entity->currentState.pos.trBase, &x, &y))
+			{	
+				CG_FillRect(x, y, 5, 5, color_white);
+			}
+		}
+
+		return vmMain_original(command, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);;
+		
+	return vmMain_original(command, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 }
 ```
 here is the wallhack in action
@@ -245,7 +259,7 @@ by reading the function implementation we can guess what to initialise in ```tra
 and stumbled upon this structured array called [weapFireTable_t](https://github.com/etlegacy/etlegacy/blob/0715e94db4e2de1327e5bd90f4f025de0a3b5922/src/game/g_weapon.c#L4176) (in g_weapon.c)
 basically its a lookup table for various flags and properties for the weapon fire etc, the ```fire``` member function is invoked by ```FireWeapon()``` when firing any weapon,
 the firing function used in our table for WP_GPG40 and WP_M7 (rifle-nades that we're interested at) is [weapon_gpg40_fire()](https://github.com/etlegacy/etlegacy/blob/ae213d85181f3d41eaf2dc4fa2bb723d5407edf4/src/game/g_weapon.c#L3645),
-inside the function it uses ```AngleVector()``` (function that takes our viewangles and calculates vectors that point in directions relative to our viewangles)
+inside the function it calls ```AngleVector()``` (function that takes our viewangles and calculates vectors that point in directions relative to our viewangles)
 to obtain forward vector (vector that points in the forward facing direction) and multiplies the forward vector by 2000,
 afterwards it will pass that vector to ```G_PreFilledMissileEntity()``` which initialises ```trDelta``` with it.
 
@@ -324,5 +338,18 @@ dot = DotProduct(velocity, trace->plane.normal);
 VectorMA(velocity, -2 * dot, trace->plane.normal, ent->s.pos.trDelta);
 ```
 
-Using these calculations we can predict how it should bounce
+Using these calculations we can predict how it should bounce,
+[here](https://gist.github.com/DanielKoren/a6bd218ea881eb7fc9854c4ffa3cc418) is the full code
 ![](../assets/img/traj_demo.gif)
+
+##### 0x03 triggerbot
+
+Lastly triggerbot, finding offset that corresponds to our aim can be really easy and its usually done by scanning changed memory using cheat engine
+alternatively there's a member in ```cg``` structure called [crosshairClientNum](https://github.com/etlegacy/etlegacy/blob/8cee6c4c9de5bae3a7a0797ab962f48bf0c4a93b/src/cgame/cg_local.h#L1245) but I prefer leaving this as an excerise for the reader :)
+
+---
+
+<sub>references:</sub>
+
+<sub>https://guidedhacking.com/threads/how-to-hack-call-of-duty-games-quake-engine-games.11155/</sub>
+<sub>https://www.quakewiki.net/archives/code3arena/tutorials/tutorial38.shtml</sub>
