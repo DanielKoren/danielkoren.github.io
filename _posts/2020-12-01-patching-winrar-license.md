@@ -1,8 +1,8 @@
 ---
-title: winrar analysis
+title: patching winrar license
 date: 2020-12-15 12:05:00 +02:00
 tags: [reverse-engineering, windows]
-description: winrar analysis
+description: patching winrar license
 image: ""
 ---
 
